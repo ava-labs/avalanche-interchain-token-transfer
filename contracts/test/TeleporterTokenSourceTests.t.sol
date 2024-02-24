@@ -31,6 +31,10 @@ contract ExampleSourceApp is TeleporterTokenSource {
     }
 
     function _withdraw(address recipient, uint256 amount) internal virtual override {}
+
+    function _deposit(uint256 amount) internal virtual override returns (uint256) {
+        return amount;
+    }
 }
 
 contract TeleporterTokenSourceTest is Test {
