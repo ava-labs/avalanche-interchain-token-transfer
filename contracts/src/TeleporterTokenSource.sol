@@ -24,9 +24,6 @@ import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/IERC20.sol";
  * instance are forwarded to another {TeleporterTokenDestination} instance.
  */
 abstract contract TeleporterTokenSource is ITeleporterTokenBridge, TeleporterOwnerUpgradeable {
-    // Warp precompile used for sending and receiving Warp messages.
-    address public constant WARP_PRECOMPILE_ADDRESS = 0x0200000000000000000000000000000000000005;
-
     // The blockchain ID of the chain this contract is deployed on.
     bytes32 public immutable blockchainID;
 
@@ -51,7 +48,7 @@ abstract contract TeleporterTokenSource is ITeleporterTokenBridge, TeleporterOwn
         address feeToken_
     ) TeleporterOwnerUpgradeable(teleporterRegistryAddress, teleporterManager) {
         feeToken = IERC20(feeToken_);
-        blockchainID = IWarpMessenger(WARP_PRECOMPILE_ADDRESS).getBlockchainID();
+        blockchainID = IWarpMessenger(0x0200000000000000000000000000000000000005).getBlockchainID();
     }
 
     /**

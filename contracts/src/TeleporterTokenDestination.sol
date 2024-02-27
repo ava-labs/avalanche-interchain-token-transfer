@@ -24,9 +24,6 @@ abstract contract TeleporterTokenDestination is
     ITeleporterTokenBridge,
     TeleporterOwnerUpgradeable
 {
-    // Warp precompile used for sending and receiving Warp messages.
-    address public constant WARP_PRECOMPILE_ADDRESS = 0x0200000000000000000000000000000000000005;
-
     // The blockchain ID of the chain this contract is deployed on.
     bytes32 public immutable blockchainID;
 
@@ -54,7 +51,7 @@ abstract contract TeleporterTokenDestination is
         // NativeTokenDestination will pass in erc20 token it deposits native tokens to pay for fees.
         // ERC20Destination will pass in the erc20 token it's bridging.
         feeToken = IERC20(feeToken_);
-        blockchainID = IWarpMessenger(WARP_PRECOMPILE_ADDRESS).getBlockchainID();
+        blockchainID = IWarpMessenger(0x0200000000000000000000000000000000000005).getBlockchainID();
     }
 
     /**
