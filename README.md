@@ -36,4 +36,9 @@ Other than simple transfers from source to destination chains, the token bridge 
 
 ## Tests
 
-Unit tests are written under `contracts/test/` and can be run with `forge test -vvv`.
+Unit tests are written under `contracts/test/` and can be run with `forge`:
+
+```
+cd contracts/test
+forge test -vvv
+```
