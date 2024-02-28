@@ -220,10 +220,10 @@ contract TeleporterTokenSourceTest is Test {
 
     function testMultiHopTransfer() public {
         // First send to destination blockchain to increase the bridge balance
-        _sendSuccess(2, 0);
+        uint256 amount = 2;
+        _sendSuccess(amount, 0);
 
-        uint256 amount = 1;
-        uint256 feeAmount = 0;
+        uint256 feeAmount = 1;
         uint256 bridgedAmount = amount - feeAmount;
         SendTokensInput memory input = SendTokensInput({
             destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
@@ -242,7 +242,44 @@ contract TeleporterTokenSourceTest is Test {
         // Expect to call {TeleporterTokenSource-_send} for a multihop transfer
         vm.prank(MOCK_TELEPORTER_MESSENGER_ADDRESS);
         app.receiveTeleporterMessage(
-            DEFAULT_DESTINATION_BLOCKCHAIN_ID, DEFAULT_DESTINATION_ADDRESS, abi.encode(input, 1)
+            DEFAULT_DESTINATION_BLOCKCHAIN_ID,
+            DEFAULT_DESTINATION_ADDRESS,
+            abi.encode(input, amount)
+        );
+    }
+
+    function testMultiHopTransferFails() public {
+        // First send to destination blockchain to increase the bridge balance
+        uint256 amount = 2;
+        _sendSuccess(amount, 0);
+        uint256 balanceBefore =
+            app.bridgedBalances(DEFAULT_DESTINATION_BLOCKCHAIN_ID, DEFAULT_DESTINATION_ADDRESS);
+        assertEq(balanceBefore, amount);
+
+        // Fail due to insufficient amount to cover fees
+        uint256 feeAmount = amount;
+        SendTokensInput memory input = SendTokensInput({
+            destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
+            destinationBridgeAddress: DEFAULT_DESTINATION_ADDRESS,
+            recipient: DEFAULT_RECIPIENT_ADDRESS,
+            primaryFee: feeAmount,
+            secondaryFee: 0,
+            allowedRelayerAddresses: new address[](0)
+        });
+
+        vm.expectRevert(_formatTokenSourceErrorMessage("insufficient amount to cover fees"));
+        // Expect to call {TeleporterTokenSource-_send} for a multihop transfer
+        vm.prank(MOCK_TELEPORTER_MESSENGER_ADDRESS);
+        app.receiveTeleporterMessage(
+            DEFAULT_DESTINATION_BLOCKCHAIN_ID,
+            DEFAULT_DESTINATION_ADDRESS,
+            abi.encode(input, amount)
+        );
+
+        // Make sure the bridge balance is still the same
+        assertEq(
+            app.bridgedBalances(DEFAULT_DESTINATION_BLOCKCHAIN_ID, DEFAULT_DESTINATION_ADDRESS),
+            balanceBefore
         );
     }
 
