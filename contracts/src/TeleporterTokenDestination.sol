@@ -18,24 +18,25 @@ import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/IERC20.sol";
  */
 
 /**
+ * @title TeleporterTokenDestination
  * @dev Abstract contract for a Teleporter token bridge that receives tokens from a {TeleporterTokenSource} in exchange for the tokens of this token bridge instance.
  */
 abstract contract TeleporterTokenDestination is
     ITeleporterTokenBridge,
     TeleporterOwnerUpgradeable
 {
-    // The blockchain ID of the chain this contract is deployed on.
+    /// @notice The blockchain ID of the chain this contract is deployed on.
     bytes32 public immutable blockchainID;
 
-    // The blockchain ID of the source chain this contract receives tokens from.
+    /// @notice The blockchain ID of the source chain this contract receives tokens from.
     bytes32 public immutable sourceBlockchainID;
-    // The address of the source token bridge instance this contract receives tokens from.
+    /// @notice The address of the source token bridge instance this contract receives tokens from.
     address public immutable tokenSourceAddress;
-    // The ERC20 token this contract uses to pay for Teleporter fees.
+    /// @notice The ERC20 token this contract uses to pay for Teleporter fees.
     IERC20 public immutable feeToken;
 
     /**
-     * @dev Initializes this destination token bridge instance to receive
+     * @notice Initializes this destination token bridge instance to receive
      * tokens from the specified source blockchain and token bridge instance.
      */
     constructor(
@@ -55,9 +56,9 @@ abstract contract TeleporterTokenDestination is
     }
 
     /**
-     * @dev Sends tokens transferred to this contract to the destination token bridge instance.
+     * @notice Sends tokens to the specified destination token bridge instance.
      *
-     * Burns the bridged amount, and uses Teleporter to send a cross chain message.
+     * @dev Burns the bridged amount, and uses Teleporter to send a cross chain message.
      * TODO: Determine if this can be abstracted to a common function with {TeleporterTokenSource}
      * Requirements:
      *
@@ -119,9 +120,9 @@ abstract contract TeleporterTokenDestination is
     }
 
     /**
-     * @dev See {ITeleporterUpgradeable-_receiveTeleporterMessage}
+     * @notice Verifies the source token bridge instance, and withdraws the amount to the recipient address.
      *
-     * Verifies the source token bridge instance, and withdraws the amount to the recipient address.
+     * @dev See {ITeleporterUpgradeable-_receiveTeleporterMessage}
      */
     function _receiveTeleporterMessage(
         bytes32 sourceBlockchainID_,
@@ -142,14 +143,14 @@ abstract contract TeleporterTokenDestination is
     }
 
     /**
-     * @dev Burns tokens from the sender's balance.
+     * @notice Burns tokens from the sender's balance.
      * @param amount The amount of tokens to burn
      */
     // solhint-disable-next-line no-empty-blocks
     function _burn(uint256 amount) internal virtual;
 
     /**
-     * @dev Withdraws tokens to the recipient address.
+     * @notice Withdraws tokens to the recipient address.
      * @param recipient The address to withdraw tokens to
      * @param amount The amount of tokens to withdraw
      */

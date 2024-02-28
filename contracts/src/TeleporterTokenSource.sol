@@ -18,28 +18,31 @@ import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/IERC20.sol";
  */
 
 /**
+ * @title TeleporterTokenSource
  * @dev Abstract contract for a Teleporter token bridge that sends tokens to {TeleporterTokenDestination} instances.
  *
  * This contract also handles multihop transfers, where tokens sent from a {TeleporterTokenDestination}
  * instance are forwarded to another {TeleporterTokenDestination} instance.
  */
 abstract contract TeleporterTokenSource is ITeleporterTokenBridge, TeleporterOwnerUpgradeable {
-    // The blockchain ID of the chain this contract is deployed on.
+    /// @notice The blockchain ID of the chain this contract is deployed on.
     bytes32 public immutable blockchainID;
 
-    // The ERC20 token this contract uses to pay for Teleporter fees.
+    /// @notice The ERC20 token this contract uses to pay for Teleporter fees.
     IERC20 public immutable feeToken;
 
-    // Tracks the balances of tokens sent to other bridge instances.
-    // Bridges are not allowed to unwrap more than has been sent to them.
-    // (destinationBlockchainID, destinationBridgeAddress) -> balance
+    /**
+     * @notice Tracks the balances of tokens sent to other bridge instances.
+     * Bridges are not allowed to unwrap more than has been sent to them.
+     * @dev (destinationBlockchainID, destinationBridgeAddress) -> balance
+     */
     mapping(
         bytes32 destinationBlockchainID
             => mapping(address destinationBridgeAddress => uint256 balance)
     ) public bridgedBalances;
 
     /**
-     * @dev Initializes this source token bridge instance to send
+     * @notice Initializes this source token bridge instance to send
      * tokens to the specified destination chain and token bridge instance.
      */
     constructor(
@@ -52,9 +55,9 @@ abstract contract TeleporterTokenSource is ITeleporterTokenBridge, TeleporterOwn
     }
 
     /**
-     * @dev Sends tokens transferred to this contract to the destination token bridge instance.
+     * @notice Sends tokens to the specified destination token bridge instance.
      *
-     * Increases the bridge balance sent to each destination token bridge instance,
+     * @dev Increases the bridge balance sent to each destination token bridge instance,
      * and uses Teleporter to send a cross chain message.
      * TODO: Determine if this can be abstracted to a common function with {TeleporterTokenDestination}
      * Requirements:
