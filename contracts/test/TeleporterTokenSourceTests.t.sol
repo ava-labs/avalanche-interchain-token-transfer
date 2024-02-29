@@ -86,78 +86,36 @@ contract TeleporterTokenSourceTest is Test {
      */
 
     function testSendToSameChain() public {
+        SendTokensInput memory input = _createDefaultSendTokensInput();
+        input.destinationBlockchainID = DEFAULT_SOURCE_BLOCKCHAIN_ID;
         vm.expectRevert(_formatTokenSourceErrorMessage("cannot bridge to same chain"));
-        app.send(
-            SendTokensInput({
-                destinationBlockchainID: DEFAULT_SOURCE_BLOCKCHAIN_ID,
-                destinationBridgeAddress: DEFAULT_DESTINATION_ADDRESS,
-                recipient: DEFAULT_RECIPIENT_ADDRESS,
-                primaryFee: 0,
-                secondaryFee: 0,
-                allowedRelayerAddresses: new address[](0)
-            }),
-            0
-        );
+        app.send(input, 0);
     }
 
     function testZeroDestinationBridge() public {
+        SendTokensInput memory input = _createDefaultSendTokensInput();
+        input.destinationBridgeAddress = address(0);
         vm.expectRevert(_formatTokenSourceErrorMessage("zero destination bridge address"));
-        app.send(
-            SendTokensInput({
-                destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
-                destinationBridgeAddress: address(0),
-                recipient: DEFAULT_RECIPIENT_ADDRESS,
-                primaryFee: 0,
-                secondaryFee: 0,
-                allowedRelayerAddresses: new address[](0)
-            }),
-            0
-        );
+        app.send(input, 0);
     }
 
     function testZeroRecipient() public {
+        SendTokensInput memory input = _createDefaultSendTokensInput();
+        input.recipient = address(0);
         vm.expectRevert(_formatTokenSourceErrorMessage("zero recipient address"));
-        app.send(
-            SendTokensInput({
-                destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
-                destinationBridgeAddress: DEFAULT_DESTINATION_ADDRESS,
-                recipient: address(0),
-                primaryFee: 0,
-                secondaryFee: 0,
-                allowedRelayerAddresses: new address[](0)
-            }),
-            0
-        );
+        app.send(input, 0);
     }
 
     function testZeroSendAmount() public {
         vm.expectRevert(_formatTokenSourceErrorMessage("zero send amount"));
-        app.send(
-            SendTokensInput({
-                destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
-                destinationBridgeAddress: DEFAULT_DESTINATION_ADDRESS,
-                recipient: DEFAULT_RECIPIENT_ADDRESS,
-                primaryFee: 0,
-                secondaryFee: 0,
-                allowedRelayerAddresses: new address[](0)
-            }),
-            0
-        );
+        app.send(_createDefaultSendTokensInput(), 0);
     }
 
     function testInsufficientAmountToCoverFees() public {
+        SendTokensInput memory input = _createDefaultSendTokensInput();
+        input.primaryFee = 1;
         vm.expectRevert(_formatTokenSourceErrorMessage("insufficient amount to cover fees"));
-        app.send(
-            SendTokensInput({
-                destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
-                destinationBridgeAddress: DEFAULT_DESTINATION_ADDRESS,
-                recipient: DEFAULT_RECIPIENT_ADDRESS,
-                primaryFee: 1,
-                secondaryFee: 0,
-                allowedRelayerAddresses: new address[](0)
-            }),
-            1
-        );
+        app.send(input, input.primaryFee);
     }
 
     function testSendWithFees() public {
@@ -362,6 +320,17 @@ contract TeleporterTokenSourceTest is Test {
             abi.encodeWithSelector(TeleporterRegistry.getLatestTeleporter.selector),
             abi.encode(ITeleporterMessenger(MOCK_TELEPORTER_MESSENGER_ADDRESS))
         );
+    }
+
+    function _createDefaultSendTokensInput() internal pure returns (SendTokensInput memory) {
+        return SendTokensInput({
+            destinationBlockchainID: DEFAULT_DESTINATION_BLOCKCHAIN_ID,
+            destinationBridgeAddress: DEFAULT_DESTINATION_ADDRESS,
+            recipient: DEFAULT_RECIPIENT_ADDRESS,
+            primaryFee: 0,
+            secondaryFee: 0,
+            allowedRelayerAddresses: new address[](0)
+        });
     }
 
     function _formatTokenSourceErrorMessage(string memory errorMessage)
