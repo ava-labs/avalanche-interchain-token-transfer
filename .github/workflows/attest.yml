@@ -1,0 +1,9 @@
+name: Verify Commits with Yubikey Attestation
+
+on:
+  pull_request:
+
+jobs:
+  call-verify-commits-workflow:
+    uses: ava-labs/yubikey-attestation/.github/workflows/verify-attestation.yml@main
+    secrets: inherit
