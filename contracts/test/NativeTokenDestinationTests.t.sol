@@ -70,30 +70,25 @@ contract NativeTokenDestinationTest is NativeTokenBridgeTest, TeleporterTokenDes
         // Starts off under collateralized.
         assertFalse(app.isCollateralized());
 
+        bytes memory message =
+            _encodeSingleHopSendMessage(initialImbalance / 2, DEFAULT_RECIPIENT_ADDRESS);
         // Add less than the full amount of required collateral.
         vm.expectEmit(true, true, true, true, address(app));
         emit CollateralAdded({amount: initialImbalance / 2, remaining: initialImbalance / 2});
 
         vm.prank(MOCK_TELEPORTER_MESSENGER_ADDRESS);
-        app.receiveTeleporterMessage(
-            DEFAULT_SOURCE_BLOCKCHAIN_ID,
-            TOKEN_SOURCE_ADDRESS,
-            _encodeSingleHopSendMessage(initialImbalance / 2, DEFAULT_RECIPIENT_ADDRESS)
-        );
+        app.receiveTeleporterMessage(DEFAULT_SOURCE_BLOCKCHAIN_ID, TOKEN_SOURCE_ADDRESS, message);
         assertEq(app.currentReserveImbalance(), initialImbalance / 2);
         assertFalse(app.isCollateralized());
 
         // Add more than the remaining amount of imbalance.
+        message = _encodeSingleHopSendMessage(initialImbalance, DEFAULT_RECIPIENT_ADDRESS);
         vm.expectEmit(true, true, true, true, address(app));
         emit CollateralAdded({amount: initialImbalance / 2, remaining: 0});
         _setUpMockMint(DEFAULT_RECIPIENT_ADDRESS, initialImbalance / 2);
 
         vm.prank(MOCK_TELEPORTER_MESSENGER_ADDRESS);
-        app.receiveTeleporterMessage(
-            DEFAULT_SOURCE_BLOCKCHAIN_ID,
-            TOKEN_SOURCE_ADDRESS,
-            _encodeSingleHopSendMessage(initialImbalance, DEFAULT_RECIPIENT_ADDRESS)
-        );
+        app.receiveTeleporterMessage(DEFAULT_SOURCE_BLOCKCHAIN_ID, TOKEN_SOURCE_ADDRESS, message);
 
         // It should now be collateralized.
         assertEq(app.currentReserveImbalance(), 0);
@@ -397,23 +392,21 @@ contract NativeTokenDestinationTest is NativeTokenBridgeTest, TeleporterTokenDes
             burnedFeesReportingRewardPercentage: _DEFAULT_BURN_FEE_REWARDS_PERCENTAGE
         }));
 
+        bytes memory message = _encodeSingleHopCallMessage(
+            _DEFAULT_INITIAL_RESERVE_IMBALANCE * 2,
+            DEFAULT_RECIPIENT_CONTRACT_ADDRESS,
+            new bytes(0),
+            DEFAULT_RECIPIENT_GAS_LIMIT,
+            DEFAULT_FALLBACK_RECIPIENT_ADDRESS
+        );
+
         // Add more than the full amount of required collateral.
         vm.expectEmit(true, true, true, true, address(app));
         emit CollateralAdded({amount: _DEFAULT_INITIAL_RESERVE_IMBALANCE, remaining: 0});
         _setUpMockMint(DEFAULT_FALLBACK_RECIPIENT_ADDRESS, _DEFAULT_INITIAL_RESERVE_IMBALANCE);
 
         vm.prank(MOCK_TELEPORTER_MESSENGER_ADDRESS);
-        app.receiveTeleporterMessage(
-            DEFAULT_SOURCE_BLOCKCHAIN_ID,
-            TOKEN_SOURCE_ADDRESS,
-            _encodeSingleHopCallMessage(
-                _DEFAULT_INITIAL_RESERVE_IMBALANCE * 2,
-                DEFAULT_RECIPIENT_CONTRACT_ADDRESS,
-                new bytes(0),
-                DEFAULT_RECIPIENT_GAS_LIMIT,
-                DEFAULT_FALLBACK_RECIPIENT_ADDRESS
-            )
-        );
+        app.receiveTeleporterMessage(DEFAULT_SOURCE_BLOCKCHAIN_ID, TOKEN_SOURCE_ADDRESS, message);
     }
 
     function testFallback() public {
@@ -457,12 +450,12 @@ contract NativeTokenDestinationTest is NativeTokenBridgeTest, TeleporterTokenDes
         uint256 scaledAmount = _scaleTokens(amount, true);
         vm.expectEmit(true, true, true, true, address(tokenDestination));
         emit TokensWithdrawn(recipient, scaledAmount);
-        vm.expectEmit(true, true, true, true, address(tokenDestination));
-        emit NativeCoinsMinted(recipient, scaledAmount);
         _setUpMockMint(recipient, scaledAmount);
     }
 
     function _setUpMockMint(address recipient, uint256 amount) internal override {
+        vm.expectEmit(true, true, true, true, address(app));
+        emit NativeCoinsMinted(recipient, amount);
         vm.mockCall(
             NATIVE_MINTER_PRECOMPILE_ADDRESS,
             abi.encodeCall(INativeMinter.mintNativeCoin, (recipient, amount)),
