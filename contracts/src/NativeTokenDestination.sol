@@ -401,6 +401,7 @@ contract NativeTokenDestination is
      */
     function _mintNativeCoin(address recipient, uint256 amount) private {
         totalMinted += amount;
+        emit NativeCoinsMinted(recipient, amount);
         // Calls NativeMinter precompile through INativeMinter interface.
         NATIVE_MINTER.mintNativeCoin(recipient, amount);
     }

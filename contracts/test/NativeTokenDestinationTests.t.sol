@@ -27,6 +27,7 @@ contract NativeTokenDestinationTest is NativeTokenBridgeTest, TeleporterTokenDes
 
     event CollateralAdded(uint256 amount, uint256 remaining);
     event ReportBurnedTxFees(bytes32 indexed teleporterMessageID, uint256 feesBurned);
+    event NativeCoinsMinted(address indexed recipient, uint256 amount);
 
     function setUp() public override {
         TeleporterTokenDestinationTest.setUp();
@@ -456,16 +457,9 @@ contract NativeTokenDestinationTest is NativeTokenBridgeTest, TeleporterTokenDes
         uint256 scaledAmount = _scaleTokens(amount, true);
         vm.expectEmit(true, true, true, true, address(tokenDestination));
         emit TokensWithdrawn(recipient, scaledAmount);
-        vm.mockCall(
-            NATIVE_MINTER_PRECOMPILE_ADDRESS,
-            abi.encodeCall(INativeMinter.mintNativeCoin, (recipient, scaledAmount)),
-            new bytes(0)
-        );
-        vm.expectCall(
-            NATIVE_MINTER_PRECOMPILE_ADDRESS,
-            abi.encodeCall(INativeMinter.mintNativeCoin, (recipient, scaledAmount))
-        );
-        vm.deal(recipient, scaledAmount);
+        vm.expectEmit(true, true, true, true, address(tokenDestination));
+        emit NativeCoinsMinted(recipient, scaledAmount);
+        _setUpMockMint(recipient, scaledAmount);
     }
 
     function _setUpMockMint(address recipient, uint256 amount) internal override {
@@ -490,18 +484,7 @@ contract NativeTokenDestinationTest is NativeTokenBridgeTest, TeleporterTokenDes
         bool expectSuccess
     ) internal override {
         uint256 scaledAmount = _scaleTokens(amount, true);
-        vm.mockCall(
-            NATIVE_MINTER_PRECOMPILE_ADDRESS,
-            abi.encodeCall(INativeMinter.mintNativeCoin, (address(app), scaledAmount)),
-            new bytes(0)
-        );
-        vm.expectCall(
-            NATIVE_MINTER_PRECOMPILE_ADDRESS,
-            abi.encodeCall(INativeMinter.mintNativeCoin, (address(app), scaledAmount))
-        );
-
-        // Mock the native minter precompile crediting native balance to the contract.
-        vm.deal(address(app), scaledAmount);
+        _setUpMockMint(address(app), scaledAmount);
 
         if (targetHasCode) {
             // Non-zero code length

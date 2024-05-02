@@ -18,14 +18,21 @@ import {INativeTokenBridge} from "./INativeTokenBridge.sol";
  */
 interface INativeTokenDestination is INativeTokenBridge {
     /**
-     * @dev Emitted when tokens are not minted in order to collateralize the source contract.
+     * @notice Emitted when tokens are not minted in order to collateralize the source contract.
      */
     event CollateralAdded(uint256 amount, uint256 remaining);
 
     /**
-     * @dev Emitted when reporting burned tx fees to source chain.
+     * @notice Emitted when reporting burned tx fees to source chain.
      */
     event ReportBurnedTxFees(bytes32 indexed teleporterMessageID, uint256 feesBurned);
+
+    /**
+     * @notice Emmitted when native coins are minted to the recipient.
+     * @param recipient address that receives the tokens.
+     * @param amount of tokens minted.
+     */
+    event NativeCoinsMinted(address indexed recipient, uint256 amount);
 
     /**
      * @dev Returns true if the reserve imbalance for this contract has been accounted for.
