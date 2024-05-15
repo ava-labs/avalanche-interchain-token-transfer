@@ -19,12 +19,9 @@ import {ITeleporterReceiver} from "@teleporter/ITeleporterReceiver.sol";
  * @param recipient address of the recipient on the destination chain
  * @param primaryFeeTokenAddress address of the ERC20 contract to optionally pay a Teleporter message fee
  * @param primaryFee amount of tokens to pay as the optional Teleporter message fee
- * @param secondaryFee amount of tokens to pay for Teleporter fee if a multi-hop is needed
  * @param requiredGasLimit gas limit requirement for sending to a token bridge.
  * This is required because the gas requirement varies based on the token bridge instance
  * specified by {destinationBlockchainID} and {destinationBridgeAddress}.
- * @param multiHopFallback in the case of a multi-hop transfer, the address where the tokens
- * are sent on the source chain if the transfer is unable to be routed to its final destination.
  */
 struct SendTokensInput {
     bytes32 destinationBlockchainID;
@@ -32,40 +29,55 @@ struct SendTokensInput {
     address recipient;
     address primaryFeeTokenAddress;
     uint256 primaryFee;
-    uint256 secondaryFee;
     uint256 requiredGasLimit;
-    address multiHopFallback;
 }
 
 /**
- * @notice Parameters for briding tokens to another chain and calling a contract on that chain
- * @param destinationBlockchainID blockchainID of the destination
- * @param destinationBridgeAddress address of the destination token bridge instance
- * @param recipientContract the contract on the destination chain that will be called
+ * @notice Parameters for delivery of multi-hop transfers.
+ * @param secondaryFee amount of tokens to pay for Teleporter fee if a multi-hop is needed
+ * @param multiHopFallback in the case of a multi-hop transfer, the address where the tokens
+ * are sent on the source chain if the transfer is unable to be routed to its final destination.
+ */
+struct MultiHopInput {
+    uint256 secondaryFee;
+    address fallbackAddress;
+}
+
+/**
+ * @notice Parameters for delivery of tokens to another chain and destination recipient.
+ * @param input Parameters for delivery of tokens to another chain and destination recipient.
+ * @param multiHopInput Parameters for delivery of multi-hop transfers.
+ */
+struct SendMultiHopInput {
+    SendTokensInput input;
+    MultiHopInput multiHopInput;
+}
+
+/**
+ * @notice Parameters for briding tokens to another chain and calling a contract on that chain.
+ * @param input Parameters for delivery of tokens to another chain and destination recipient.
  * @param recipientPayload the payload that will be provided to the recipient contract on the destination chain
  * @param requiredGasLimit the required amount of gas needed to deliver the message on its destination chain,
  * including token operations and the call to the recipient contract.
  * @param recipientGasLimit the amount of gas that will provided to the recipient contract on the destination chain,
  * which must be less than the requiredGasLimit of the message as a whole.
- * @param multiHopFallback in the case of a multi-hop transfer, the address where the tokens
- * are sent on the source chain if the transfer is unable to be routed to its final destination.
- * @param fallbackRecipient address on the {destinationBlockchainID} where the bridged tokens are sent if the call to the recipient contract fails.
- * @param primaryFeeTokenAddress address of the ERC20 contract to optionally pay a Teleporter message fee
- * @param primaryFee amount of tokens to pay for Teleporter fee on the source chain
- * @param secondaryFee amount of tokens to pay for Teleporter fee if a multi-hop is needed
  */
 struct SendAndCallInput {
-    bytes32 destinationBlockchainID;
-    address destinationBridgeAddress;
-    address recipientContract;
+    SendTokensInput input;
     bytes recipientPayload;
-    uint256 requiredGasLimit;
     uint256 recipientGasLimit;
-    address multiHopFallback;
     address fallbackRecipient;
-    address primaryFeeTokenAddress;
-    uint256 primaryFee;
-    uint256 secondaryFee;
+}
+
+/**
+ * @notice Parameters for briding tokens to another chain and calling a contract on that chain.
+ * in two hops.
+ * @param sendAndCallInput Parameters for briding tokens to another chain and calling a contract on that chain.
+ * @param multiHopInput Parameters for delivery of multi-hop transfers.
+ */
+struct SendAndCallMultiHopInput {
+    SendAndCallInput sendAndCallInput;
+    MultiHopInput multiHopInput;
 }
 
 enum BridgeMessageType {

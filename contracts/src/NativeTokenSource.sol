@@ -64,14 +64,14 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
      * @dev See {INativeTokenBridge-send}
      */
     function send(SendTokensInput calldata input) external payable {
-        _send(input, msg.value, false);
+        _send(input, msg.value);
     }
 
     /**
      * @dev See {INativeTokenBridge-sendAndCall}
      */
     function sendAndCall(SendAndCallInput calldata input) external payable {
-        _sendAndCall(blockchainID, msg.sender, input, msg.value, false);
+        _sendAndCall(blockchainID, msg.sender, input, msg.value);
     }
 
     /**

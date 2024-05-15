@@ -9,7 +9,10 @@ import {TeleporterMessageInput, TeleporterFeeInfo} from "@teleporter/ITeleporter
 import {TeleporterOwnerUpgradeable} from "@teleporter/upgrades/TeleporterOwnerUpgradeable.sol";
 import {
     SendTokensInput,
+    SendMultiHopInput,
     SendAndCallInput,
+    SendAndCallMultiHopInput,
+    MultiHopInput,
     BridgeMessageType,
     BridgeMessage,
     SingleHopSendMessage,
@@ -185,7 +188,7 @@ abstract contract TeleporterTokenDestination is
     }
 
     /**
-     * @notice Sends tokens to the specified destination token bridge instance.
+     * @notice Sends tokens to the token source bridge instance.
      *
      * @dev Burns the bridged amount, and uses Teleporter to send a cross chain message.
      * Tokens can be sent to the same blockchain this bridge instance is deployed on,
@@ -195,80 +198,30 @@ abstract contract TeleporterTokenDestination is
      * - {input.destinationBridgeAddress} cannot be the zero address
      * - {input.recipient} cannot be the zero address
      * - {amount} must be greater than 0
-     * - {amount} must be greater than {input.primaryFee}
      */
     function _send(SendTokensInput calldata input, uint256 amount) internal sendNonReentrant {
-        require(input.recipient != address(0), "TeleporterTokenDestination: zero recipient address");
-        require(input.requiredGasLimit > 0, "TeleporterTokenDestination: zero required gas limit");
+        _validateSendTokensInput(input);
+        require(
+            input.destinationBlockchainID == sourceBlockchainID,
+            "TeleporterTokenDestination: invalid destination blockchain ID"
+        );
+        require(
+            input.destinationBridgeAddress == tokenSourceAddress,
+            "TeleporterTokenDestination: invalid destination bridge address"
+        );
 
         uint256 primaryFee;
         (amount, primaryFee) = _prepareSend({
-            destinationBlockchainID: input.destinationBlockchainID,
-            destinationBridgeAddress: input.destinationBridgeAddress,
             amount: amount,
             primaryFeeTokenAddress: input.primaryFeeTokenAddress,
             primaryFee: input.primaryFee,
-            secondaryFee: input.secondaryFee
+            secondaryFee: 0
         });
 
-        // If the destination blockchain is the source blockchain,
-        // no multi-hop is needed. Only the required gas limit for the Teleporter message back to
-        // {sourceBlockchainID} is needed, which is provided by {input.requiredGasLimit}.
-        // Else, there will be a multi-hop transfer to the final destination.
-        // The first hop back to {sourceBlockchainID} requires {MULTI_HOP_REQUIRED_GAS},
-        // and the second hop to the final destination requires {input.requiredGasLimit}.
-        BridgeMessage memory message;
-        uint256 messageRequiredGasLimit = input.requiredGasLimit;
-        if (input.destinationBlockchainID == sourceBlockchainID) {
-            // If the destination blockchain is the source bridge instance's blockchain,
-            // the destination bridge address must match the token source address,
-            // and no secondary fee or fallback is needed.
-            require(
-                input.destinationBridgeAddress == tokenSourceAddress,
-                "TeleporterTokenDestination: invalid destination bridge address"
-            );
-            require(input.secondaryFee == 0, "TeleporterTokenDestination: non-zero secondary fee");
-            require(
-                input.multiHopFallback == address(0),
-                "TeleporterTokenDestination: non-zero multi-hop fallback"
-            );
-            message = BridgeMessage({
-                messageType: BridgeMessageType.SINGLE_HOP_SEND,
-                payload: abi.encode(SingleHopSendMessage({recipient: input.recipient, amount: amount}))
-            });
-        } else {
-            // Require a multi-hop fallback in case the message sent to the intermediate source
-            // chain fails to route the tokens to the final destination.
-            require(
-                input.multiHopFallback != address(0),
-                "TeleporterTokenDestination: zero multi-hop fallback"
-            );
-
-            // If the destination blockchain ID is this blockchian, the destination
-            // bridge address must be a differet contract. This is a multi-hop case to
-            // a different bridge contract on this chain.
-            if (input.destinationBlockchainID == blockchainID) {
-                require(
-                    input.destinationBridgeAddress != address(this),
-                    "TeleporterTokenDestination: invalid destination bridge address"
-                );
-            }
-            message = BridgeMessage({
-                messageType: BridgeMessageType.MULTI_HOP_SEND,
-                payload: abi.encode(
-                    MultiHopSendMessage({
-                        destinationBlockchainID: input.destinationBlockchainID,
-                        destinationBridgeAddress: input.destinationBridgeAddress,
-                        recipient: input.recipient,
-                        amount: amount,
-                        secondaryFee: input.secondaryFee,
-                        secondaryGasLimit: input.requiredGasLimit,
-                        multiHopFallback: input.multiHopFallback
-                    })
-                    )
-            });
-            messageRequiredGasLimit = MULTI_HOP_REQUIRED_GAS;
-        }
+        BridgeMessage memory message = BridgeMessage({
+            messageType: BridgeMessageType.SINGLE_HOP_SEND,
+            payload: abi.encode(SingleHopSendMessage({recipient: input.recipient, amount: amount}))
+        });
 
         bytes32 messageID = _sendTeleporterMessage(
             TeleporterMessageInput({
@@ -278,7 +231,85 @@ abstract contract TeleporterTokenDestination is
                     feeTokenAddress: input.primaryFeeTokenAddress,
                     amount: primaryFee
                 }),
-                requiredGasLimit: messageRequiredGasLimit,
+                requiredGasLimit: input.requiredGasLimit,
+                allowedRelayerAddresses: new address[](0),
+                message: abi.encode(message)
+            })
+        );
+
+        emit TokensSent(messageID, msg.sender, input, amount);
+    }
+
+    /**
+     * @notice Sends tokens to the specified destination token bridge instance through a multi-hop
+     * transaction sent through the source chain.
+     *
+     * @dev Burns the bridged amount, and uses Teleporter to send a cross chain message.
+     * Tokens can be sent to the same blockchain this bridge instance is deployed on,
+     * to another destination bridge instance.
+     * Requirements:
+     *
+     * - {input.destinationBridgeAddress} cannot be the zero address
+     * - {input.recipient} cannot be the zero address
+     * - {amount} must be greater than 0
+     */
+    function _sendMultiHop(
+        SendMultiHopInput calldata sendMultiHopInput,
+        uint256 amount
+    ) internal sendNonReentrant {
+        SendTokensInput calldata input = sendMultiHopInput.input;
+        MultiHopInput calldata multiHopInput = sendMultiHopInput.multiHopInput;
+
+        _validateSendTokensInput(input);
+        require(
+            multiHopInput.fallbackAddress != address(0),
+            "TeleporterTokenDestination: zero multi-hop fallback"
+        );
+
+        uint256 primaryFee;
+        (amount, primaryFee) = _prepareSend({
+            amount: amount,
+            primaryFeeTokenAddress: input.primaryFeeTokenAddress,
+            primaryFee: input.primaryFee,
+            secondaryFee: multiHopInput.secondaryFee
+        });
+
+        // If the destination blockchain ID is this blockchian, the destination
+        // bridge address must be a differet contract. This is a multi-hop case to
+        // a different bridge contract on this chain.
+        if (input.destinationBlockchainID == blockchainID) {
+            require(
+                input.destinationBridgeAddress != address(this),
+                "TeleporterTokenDestination: invalid destination bridge address"
+            );
+        }
+
+        BridgeMessage memory message = BridgeMessage({
+            messageType: BridgeMessageType.MULTI_HOP_SEND,
+            payload: abi.encode(
+                MultiHopSendMessage({
+                    destinationBlockchainID: input.destinationBlockchainID,
+                    destinationBridgeAddress: input.destinationBridgeAddress,
+                    recipient: input.recipient,
+                    amount: amount,
+                    secondaryFee: multiHopInput.secondaryFee,
+                    secondaryGasLimit: input.requiredGasLimit,
+                    multiHopFallback: multiHopInput.fallbackAddress
+                })
+                )
+        });
+
+        // The first hop back to {sourceBlockchainID} requires {MULTI_HOP_REQUIRED_GAS},
+        // and the second hop to the final destination requires {input.requiredGasLimit}.
+        bytes32 messageID = _sendTeleporterMessage(
+            TeleporterMessageInput({
+                destinationBlockchainID: sourceBlockchainID,
+                destinationAddress: tokenSourceAddress,
+                feeInfo: TeleporterFeeInfo({
+                    feeTokenAddress: input.primaryFeeTokenAddress,
+                    amount: primaryFee
+                }),
+                requiredGasLimit: MULTI_HOP_REQUIRED_GAS,
                 allowedRelayerAddresses: new address[](0),
                 message: abi.encode(message)
             })
@@ -296,102 +327,107 @@ abstract contract TeleporterTokenDestination is
      * to another destination bridge instance.
      */
     function _sendAndCall(
-        SendAndCallInput calldata input,
+        SendAndCallInput calldata sendAndCallInput,
         uint256 amount
     ) internal sendNonReentrant {
-        require(
-            input.recipientContract != address(0),
-            "TeleporterTokenDestination: zero recipient contract address"
-        );
-        require(input.requiredGasLimit > 0, "TeleporterTokenDestination: zero required gas limit");
-        require(input.recipientGasLimit > 0, "TeleporterTokenDestination: zero recipient gas limit");
-        require(
-            input.recipientGasLimit < input.requiredGasLimit,
-            "TeleporterTokenDestination: invalid recipient gas limit"
-        );
-        require(
-            input.fallbackRecipient != address(0),
-            "TeleporterTokenDestination: zero fallback recipient address"
-        );
+        _validateSendAndCallInput(sendAndCallInput);
+
+        SendTokensInput calldata input = sendAndCallInput.input;
+
         uint256 primaryFee;
         (amount, primaryFee) = _prepareSend({
-            destinationBlockchainID: input.destinationBlockchainID,
-            destinationBridgeAddress: input.destinationBridgeAddress,
             amount: amount,
             primaryFeeTokenAddress: input.primaryFeeTokenAddress,
             primaryFee: input.primaryFee,
-            secondaryFee: input.secondaryFee
+            secondaryFee: 0
         });
 
-        BridgeMessage memory message;
-        uint256 messageRequiredGasLimit = input.requiredGasLimit;
-        if (input.destinationBlockchainID == sourceBlockchainID) {
-            // If the destination blockchain is the source bridge instance's blockchain,
-            // the destination bridge address must match the token source address.
-            require(
-                input.destinationBridgeAddress == tokenSourceAddress,
-                "TeleporterTokenDestination: invalid destination bridge address"
-            );
-            require(input.secondaryFee == 0, "TeleporterTokenDestination: non-zero secondary fee");
-            require(
-                input.multiHopFallback == address(0),
-                "TeleporterTokenDestination: non-zero multi-hop fallback"
-            );
+        BridgeMessage memory message = BridgeMessage({
+            messageType: BridgeMessageType.SINGLE_HOP_CALL,
+            payload: abi.encode(
+                SingleHopCallMessage({
+                    sourceBlockchainID: blockchainID,
+                    originSenderAddress: msg.sender,
+                    recipientContract: input.recipient,
+                    amount: amount,
+                    recipientPayload: sendAndCallInput.recipientPayload,
+                    recipientGasLimit: sendAndCallInput.recipientGasLimit,
+                    fallbackRecipient: sendAndCallInput.fallbackRecipient
+                })
+                )
+        });
 
-            message = BridgeMessage({
-                messageType: BridgeMessageType.SINGLE_HOP_CALL,
-                payload: abi.encode(
-                    SingleHopCallMessage({
-                        sourceBlockchainID: blockchainID,
-                        originSenderAddress: msg.sender,
-                        recipientContract: input.recipientContract,
-                        amount: amount,
-                        recipientPayload: input.recipientPayload,
-                        recipientGasLimit: input.recipientGasLimit,
-                        fallbackRecipient: input.fallbackRecipient
-                    })
-                    )
-            });
-        } else {
-            require(
-                input.multiHopFallback != address(0),
-                "TeleporterTokenDestination: zero multi-hop fallback"
+        // Send message to the destination bridge address
+        bytes32 messageID = _sendTeleporterMessage(
+            TeleporterMessageInput({
+                destinationBlockchainID: sourceBlockchainID,
+                destinationAddress: tokenSourceAddress,
+                feeInfo: TeleporterFeeInfo({
+                    feeTokenAddress: input.primaryFeeTokenAddress,
+                    amount: primaryFee
+                }),
+                requiredGasLimit: input.requiredGasLimit,
+                allowedRelayerAddresses: new address[](0),
+                message: abi.encode(message)
+            })
+        );
+
+        emit TokensAndCallSent(messageID, msg.sender, sendAndCallInput, amount);
+    }
+
+    /**
+     * @notice Sends tokens to the specified recipient contract on the destination chain by
+     * calling the {receiveTokens} method of the respective recipient via a multi-hop transaction.
+     *
+     * @dev Burns the bridged amount, and uses Teleporter to send a cross chain message.
+     * Tokens and data can be sent to the same blockchain this bridge instance is deployed on,
+     * to another destination bridge instance.
+     */
+    function _sendAndCallMultiHop(
+        SendAndCallMultiHopInput calldata sendAndCallMultiHopInput,
+        uint256 amount
+    ) internal sendNonReentrant {
+        _validateSendAndCallMultiHopInput(sendAndCallMultiHopInput);
+
+        SendAndCallInput calldata sendAndCallInput = sendAndCallMultiHopInput.sendAndCallInput;
+        MultiHopInput calldata multiHopInput = sendAndCallMultiHopInput.multiHopInput;
+        SendTokensInput calldata input = sendAndCallInput.input;
+
+        uint256 primaryFee;
+        (amount, primaryFee) = _prepareSend({
+            amount: amount,
+            primaryFeeTokenAddress: input.primaryFeeTokenAddress,
+            primaryFee: input.primaryFee,
+            secondaryFee: multiHopInput.secondaryFee
+        });
+
+        BridgeMessage memory message = BridgeMessage({
+            messageType: BridgeMessageType.MULTI_HOP_CALL,
+            payload: abi.encode(
+                MultiHopCallMessage({
+                    originSenderAddress: msg.sender,
+                    destinationBlockchainID: input.destinationBlockchainID,
+                    destinationBridgeAddress: input.destinationBridgeAddress,
+                    recipientContract: input.recipient,
+                    amount: amount,
+                    recipientPayload: sendAndCallInput.recipientPayload,
+                    recipientGasLimit: sendAndCallInput.recipientGasLimit,
+                    fallbackRecipient: sendAndCallInput.fallbackRecipient,
+                    multiHopFallback: multiHopInput.fallbackAddress,
+                    secondaryRequiredGasLimit: input.requiredGasLimit,
+                    secondaryFee: multiHopInput.secondaryFee
+                })
+                )
+        });
+
+        // The required gas limit for the first message sent back to the source chain
+        // needs to account for the number of words in the payload, which each use additional
+        // gas to send in a message to the final destination chain.
+        uint256 messageRequiredGasLimit = MULTI_HOP_REQUIRED_GAS
+            + (
+                calculateNumWords(sendAndCallInput.recipientPayload.length)
+                    * MULTI_HOP_CALL_GAS_PER_WORD
             );
-            // If the destination blockchain ID is this blockchian, the destination
-            // bridge address must be a different contract. This is a multi-hop case to
-            // a different bridge contract on this chain.
-            if (input.destinationBlockchainID == blockchainID) {
-                require(
-                    input.destinationBridgeAddress != address(this),
-                    "TeleporterTokenDestination: invalid destination bridge address"
-                );
-            }
-
-            message = BridgeMessage({
-                messageType: BridgeMessageType.MULTI_HOP_CALL,
-                payload: abi.encode(
-                    MultiHopCallMessage({
-                        originSenderAddress: msg.sender,
-                        destinationBlockchainID: input.destinationBlockchainID,
-                        destinationBridgeAddress: input.destinationBridgeAddress,
-                        recipientContract: input.recipientContract,
-                        amount: amount,
-                        recipientPayload: input.recipientPayload,
-                        recipientGasLimit: input.recipientGasLimit,
-                        fallbackRecipient: input.fallbackRecipient,
-                        multiHopFallback: input.multiHopFallback,
-                        secondaryRequiredGasLimit: input.requiredGasLimit,
-                        secondaryFee: input.secondaryFee
-                    })
-                    )
-            });
-
-            // The required gas limit for the first message sent back to the source chain
-            // needs to account for the number of words in the payload, which each use additional
-            // gas to send in a message to the final destination chain.
-            messageRequiredGasLimit = MULTI_HOP_REQUIRED_GAS
-                + (calculateNumWords(input.recipientPayload.length) * MULTI_HOP_CALL_GAS_PER_WORD);
-        }
 
         // Send message to the destination bridge address
         bytes32 messageID = _sendTeleporterMessage(
@@ -408,7 +444,7 @@ abstract contract TeleporterTokenDestination is
             })
         );
 
-        emit TokensAndCallSent(messageID, msg.sender, input, amount);
+        emit TokensAndCallSent(messageID, msg.sender, sendAndCallInput, amount);
     }
 
     /**
@@ -492,22 +528,11 @@ abstract contract TeleporterTokenDestination is
      * source tokens is greater than zero.
      */
     function _prepareSend(
-        bytes32 destinationBlockchainID,
-        address destinationBridgeAddress,
         uint256 amount,
         address primaryFeeTokenAddress,
         uint256 primaryFee,
         uint256 secondaryFee
     ) private returns (uint256, uint256) {
-        require(
-            destinationBlockchainID != bytes32(0),
-            "TeleporterTokenDestination: zero destination blockchain ID"
-        );
-        require(
-            destinationBridgeAddress != address(0),
-            "TeleporterTokenDestination: zero destination bridge address"
-        );
-
         // Deposit the funds sent from the user to the bridge,
         // and set to adjusted amount after deposit
         amount = _deposit(amount);
@@ -542,5 +567,55 @@ abstract contract TeleporterTokenDestination is
 
         // Return the amount in this contract's local denomination and the primary fee.
         return (amount, primaryFee);
+    }
+
+    function _validateSendAndCallMultiHopInput(
+        SendAndCallMultiHopInput calldata sendAndCallMultiHopInput
+    ) private view {
+        _validateSendAndCallInput(sendAndCallMultiHopInput.sendAndCallInput);
+        SendTokensInput memory input = sendAndCallMultiHopInput.sendAndCallInput.input;
+
+        require(
+            sendAndCallMultiHopInput.multiHopInput.fallbackAddress != address(0),
+            "TeleporterTokenDestination: zero multi-hop fallback"
+        );
+        // If the destination blockchain ID is this blockchian, the destination
+        // bridge address must be a different contract. This is a multi-hop case to
+        // a different bridge contract on this chain.
+        if (input.destinationBlockchainID == blockchainID) {
+            require(
+                input.destinationBridgeAddress != address(this),
+                "TeleporterTokenDestination: invalid destination bridge address"
+            );
+        }
+    }
+
+    function _validateSendAndCallInput(SendAndCallInput calldata sendAndCallInput) private pure {
+        _validateSendTokensInput(sendAndCallInput.input);
+        require(
+            sendAndCallInput.recipientGasLimit > 0,
+            "TeleporterTokenDestination: zero recipient gas limit"
+        );
+        require(
+            sendAndCallInput.recipientGasLimit < sendAndCallInput.input.requiredGasLimit,
+            "TeleporterTokenDestination: invalid recipient gas limit"
+        );
+        require(
+            sendAndCallInput.fallbackRecipient != address(0),
+            "TeleporterTokenDestination: zero fallback recipient address"
+        );
+    }
+
+    function _validateSendTokensInput(SendTokensInput calldata input) private pure {
+        require(input.recipient != address(0), "TeleporterTokenDestination: zero recipient address");
+        require(input.requiredGasLimit > 0, "TeleporterTokenDestination: zero required gas limit");
+        require(
+            input.destinationBlockchainID != bytes32(0),
+            "TeleporterTokenDestination: zero destination blockchain ID"
+        );
+        require(
+            input.destinationBridgeAddress != address(0),
+            "TeleporterTokenDestination: zero destination bridge address"
+        );
     }
 }

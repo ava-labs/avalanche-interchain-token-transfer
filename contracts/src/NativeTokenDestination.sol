@@ -21,7 +21,9 @@ import {IAllowList} from "@avalabs/subnet-evm-contracts@1.2.0/contracts/interfac
 import {IWrappedNativeToken} from "./interfaces/IWrappedNativeToken.sol";
 import {
     SendTokensInput,
+    SendMultiHopInput,
     SendAndCallInput,
+    SendAndCallMultiHopInput,
     BridgeMessageType,
     BridgeMessage,
     SingleHopSendMessage,
@@ -187,10 +189,34 @@ contract NativeTokenDestination is
     }
 
     /**
+     * @notice Sends native tokens transferred to this contract to the destination token bridge instance.
+     * @param input specifies information for delivery of the tokens
+     */
+    function sendMulithop(SendMultiHopInput calldata input)
+        external
+        payable
+        onlyWhenCollateralized
+    {
+        _sendMultiHop(input, msg.value);
+    }
+
+    /**
      * @dev See {INativeTokenBridge-sendAndCall}
      */
     function sendAndCall(SendAndCallInput calldata input) external payable onlyWhenCollateralized {
         _sendAndCall(input, msg.value);
+    }
+
+    /**
+     * @notice Sends native tokens transferred to this contract to the destination token bridge instance via multi-hop.
+     * @param input specifies information for delivery of the tokens and destination contract to be called.
+     */
+    function sendAndCallMultiHop(SendAndCallMultiHopInput calldata input)
+        external
+        payable
+        onlyWhenCollateralized
+    {
+        _sendAndCallMultiHop(input, msg.value);
     }
 
     /**

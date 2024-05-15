@@ -12,7 +12,9 @@ import {IERC20, ERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/ERC20.sol
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
 import {
     SendTokensInput,
+    SendMultiHopInput,
     SendAndCallInput,
+    SendAndCallMultiHopInput,
     SingleHopCallMessage
 } from "./interfaces/ITeleporterTokenBridge.sol";
 import {CallUtils} from "./utils/CallUtils.sol";
@@ -69,15 +71,32 @@ contract ERC20Destination is IERC20Bridge, TeleporterTokenDestination, ERC20 {
      *
      * @dev See {IERC20Bridge-send}
      */
-    function send(SendTokensInput calldata input, uint256 amount) external {
-        _send(input, amount);
+    function send(SendTokensInput calldata input, uint256 amount) external {}
+
+    /**
+     * @notice Sends ERC20 tokens transferred to this contract to the destination token bridge instance via multi-hop.
+     * @param input specifies information for delivery of the tokens
+     * @param amount amount of tokens to send
+     */
+    function sendMultiHop(SendMultiHopInput calldata input, uint256 amount) external {
+        _sendMultiHop(input, amount);
     }
 
     /**
      * @dev See {IERC20Bridge-sendAndCall}
      */
-    function sendAndCall(SendAndCallInput calldata input, uint256 amount) external {
-        _sendAndCall(input, amount);
+    function sendAndCall(SendAndCallInput calldata input, uint256 amount) external {}
+
+    /**
+     * @notice Sends ERC20 tokens transferred to this contract to the destination token bridge instance via multi-hop.
+     * @param input specifies information for delivery of the tokens
+     * @param amount amount of tokens to send
+     */
+    function sendAndCallMultiHop(
+        SendAndCallMultiHopInput calldata input,
+        uint256 amount
+    ) external {
+        _sendAndCallMultiHop(input, amount);
     }
 
     /**
