@@ -231,7 +231,7 @@ abstract contract TeleporterTokenSource is
      * - {input.recipient} cannot be the zero address
      * - {amount} must be greater than 0
      */
-    function _sendMultiHop(
+    function _routeMultiHopSend(
         SendTokensInput memory input,
         uint256 amount,
         address fallbackAddress
@@ -324,7 +324,7 @@ abstract contract TeleporterTokenSource is
         emit TokensAndCallSent(messageID, originSenderAddress, sendAndCallInput, adjustedAmount);
     }
 
-    function _sendAndCallMultiHop(
+    function _routeMultiHopCall(
         bytes32 sourceBlockchainID,
         address originSenderAddress,
         SendAndCallInput memory sendAndCallInput,
@@ -480,7 +480,7 @@ abstract contract TeleporterTokenSource is
             // because the fee is taken from the amount that has already been deposited.
             // For ERC20 tokens, the token address of the contract is directly passed.
             // For native assets, the contract address is the wrapped token contract.
-            _sendMultiHop(
+            _routeMultiHopSend(
                 SendTokensInput({
                     destinationBlockchainID: payload.destinationBlockchainID,
                     destinationBridgeAddress: payload.destinationBridgeAddress,
@@ -514,7 +514,7 @@ abstract contract TeleporterTokenSource is
             // because the fee is taken from the amount that has already been deposited.
             // For ERC20 tokens, the token address of the contract is directly passed.
             // For native assets, the contract address is the wrapped token contract.
-            _sendAndCallMultiHop(
+            _routeMultiHopCall(
                 sourceBlockchainID,
                 payload.originSenderAddress,
                 SendAndCallInput({

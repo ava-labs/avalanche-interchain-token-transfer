@@ -71,7 +71,9 @@ contract ERC20Destination is IERC20Bridge, TeleporterTokenDestination, ERC20 {
      *
      * @dev See {IERC20Bridge-send}
      */
-    function send(SendTokensInput calldata input, uint256 amount) external {}
+    function send(SendTokensInput calldata input, uint256 amount) external {
+        _send(input, amount);
+    }
 
     /**
      * @notice Sends ERC20 tokens transferred to this contract to the destination token bridge instance via multi-hop.
@@ -85,7 +87,9 @@ contract ERC20Destination is IERC20Bridge, TeleporterTokenDestination, ERC20 {
     /**
      * @dev See {IERC20Bridge-sendAndCall}
      */
-    function sendAndCall(SendAndCallInput calldata input, uint256 amount) external {}
+    function sendAndCall(SendAndCallInput calldata input, uint256 amount) external {
+        _sendAndCall(input, amount);
+    }
 
     /**
      * @notice Sends ERC20 tokens transferred to this contract to the destination token bridge instance via multi-hop.
