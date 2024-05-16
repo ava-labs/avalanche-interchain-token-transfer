@@ -11,6 +11,7 @@ import {IERC20SendAndCallReceiver} from "./interfaces/IERC20SendAndCallReceiver.
 import {IERC20, ERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
 import {
+    OriginSender,
     SendTokensInput,
     SendAndCallInput,
     SingleHopCallMessage
@@ -127,6 +128,7 @@ contract ERC20Destination is IERC20Bridge, TeleporterTokenDestination, ERC20 {
      * sent to the fallback recipient.
      */
     function _handleSendAndCall(
+        OriginSender memory originSender,
         SingleHopCallMessage memory message,
         uint256 amount
     ) internal virtual override {
@@ -139,14 +141,7 @@ contract ERC20Destination is IERC20Bridge, TeleporterTokenDestination, ERC20 {
         // Encode the call to {IERC20SendAndCallReceiver-receiveTokens}
         bytes memory payload = abi.encodeCall(
             IERC20SendAndCallReceiver.receiveTokens,
-            (
-                message.sourceBlockchainID,
-                message.originBridgeAddress,
-                message.originSenderAddress,
-                address(this),
-                amount,
-                message.recipientPayload
-            )
+            (originSender, address(this), amount, message.recipientPayload)
         );
 
         // Call the destination contract with the given payload and gas amount.
@@ -169,7 +164,7 @@ contract ERC20Destination is IERC20Bridge, TeleporterTokenDestination, ERC20 {
         // Transfer any remaining allowance to the fallback recipient. This will be the
         // full amount if the call failed.
         if (remainingAllowance > 0) {
-            _transfer(address(this), message.fallbackRecipient, remainingAllowance);
+            _addRetryBalances(originSender, remainingAllowance);
         }
     }
 }

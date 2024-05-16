@@ -12,6 +12,7 @@ import {SafeERC20TransferFrom} from "@teleporter/SafeERC20TransferFrom.sol";
 import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
 import {
+    OriginSender,
     SendTokensInput,
     SendAndCallInput,
     SingleHopCallMessage
@@ -55,7 +56,16 @@ contract ERC20Source is IERC20Source, TeleporterTokenSource {
      * @dev See {IERC20Bridge-send}
      */
     function send(SendTokensInput calldata input, uint256 amount) external {
-        _send(input, amount, false);
+        _send(
+            input,
+            OriginSender({
+                blockchainID: blockchainID,
+                bridgeAddress: address(this),
+                senderAddress: msg.sender
+            }),
+            amount,
+            false
+        );
     }
 
     /**
@@ -63,9 +73,11 @@ contract ERC20Source is IERC20Source, TeleporterTokenSource {
      */
     function sendAndCall(SendAndCallInput calldata input, uint256 amount) external {
         _sendAndCall({
-            sourceBlockchainID: blockchainID,
-            originBridgeAddress: address(this),
-            originSenderAddress: _msgSender(),
+            originSender: OriginSender({
+                blockchainID: blockchainID,
+                bridgeAddress: address(this),
+                senderAddress: msg.sender
+            }),
             input: input,
             amount: amount,
             isMultiHop: false
@@ -93,9 +105,13 @@ contract ERC20Source is IERC20Source, TeleporterTokenSource {
     /**
      * @dev See {TeleportTokenSource-_withdraw}
      */
-    function _withdraw(address recipient, uint256 amount) internal virtual override {
+    function _withdraw(
+        address recipient,
+        uint256 amount
+    ) internal virtual override returns (bool) {
         emit TokensWithdrawn(recipient, amount);
         token.safeTransfer(recipient, amount);
+        return true;
     }
 
     /**
@@ -107,6 +123,7 @@ contract ERC20Source is IERC20Source, TeleporterTokenSource {
      * sent to the fallback recipient.
      */
     function _handleSendAndCall(
+        OriginSender memory originSender,
         SingleHopCallMessage memory message,
         uint256 amount
     ) internal virtual override {
@@ -116,14 +133,7 @@ contract ERC20Source is IERC20Source, TeleporterTokenSource {
         // Encode the call to {IERC20SendAndCallReceiver-receiveTokens}
         bytes memory payload = abi.encodeCall(
             IERC20SendAndCallReceiver.receiveTokens,
-            (
-                message.sourceBlockchainID,
-                message.originBridgeAddress,
-                message.originSenderAddress,
-                address(token),
-                amount,
-                message.recipientPayload
-            )
+            (originSender, address(token), amount, message.recipientPayload)
         );
 
         // Call the destination contract with the given payload and gas amount.
@@ -146,7 +156,7 @@ contract ERC20Source is IERC20Source, TeleporterTokenSource {
         // Transfer any remaining allowance to the fallback recipient. This will be the
         // full amount if the call failed.
         if (remainingAllowance > 0) {
-            token.safeTransfer(message.fallbackRecipient, remainingAllowance);
+            _addRetryBalances(originSender, remainingAllowance);
         }
     }
 }

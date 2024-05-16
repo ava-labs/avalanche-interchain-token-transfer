@@ -34,7 +34,12 @@ struct SendTokensInput {
     uint256 primaryFee;
     uint256 secondaryFee;
     uint256 requiredGasLimit;
-    address multiHopFallback;
+}
+
+struct OriginSender {
+    bytes32 blockchainID;
+    address bridgeAddress;
+    address senderAddress;
 }
 
 /**
@@ -61,8 +66,6 @@ struct SendAndCallInput {
     bytes recipientPayload;
     uint256 requiredGasLimit;
     uint256 recipientGasLimit;
-    address multiHopFallback;
-    address fallbackRecipient;
     address primaryFeeTokenAddress;
     uint256 primaryFee;
     uint256 secondaryFee;
@@ -70,6 +73,7 @@ struct SendAndCallInput {
 
 enum BridgeMessageType {
     REGISTER_DESTINATION,
+    REDEEM_BALANCE,
     SINGLE_HOP_SEND,
     SINGLE_HOP_CALL,
     MULTI_HOP_SEND,
@@ -82,6 +86,7 @@ enum BridgeMessageType {
  */
 struct BridgeMessage {
     BridgeMessageType messageType;
+    OriginSender originSender;
     bytes payload;
 }
 
@@ -97,6 +102,10 @@ struct RegisterDestinationMessage {
     uint256 initialReserveImbalance;
     uint256 tokenMultiplier;
     bool multiplyOnDestination;
+}
+
+struct RedeemMessage {
+    address recipient;
 }
 
 /**
@@ -115,14 +124,10 @@ struct SingleHopSendMessage {
  * blockchain ID and address of the original sender.
  */
 struct SingleHopCallMessage {
-    bytes32 sourceBlockchainID;
-    address originBridgeAddress;
-    address originSenderAddress;
     address recipientContract;
     uint256 amount;
     bytes recipientPayload;
     uint256 recipientGasLimit;
-    address fallbackRecipient;
 }
 
 /**
@@ -137,7 +142,6 @@ struct MultiHopSendMessage {
     uint256 amount;
     uint256 secondaryFee;
     uint256 secondaryGasLimit;
-    address multiHopFallback;
 }
 
 /**
@@ -150,16 +154,13 @@ struct MultiHopSendMessage {
  * The source blockchain ID of the sender is known from the Teleporter message.
  */
 struct MultiHopCallMessage {
-    address originSenderAddress;
     bytes32 destinationBlockchainID;
     address destinationBridgeAddress;
     address recipientContract;
     uint256 amount;
     bytes recipientPayload;
     uint256 recipientGasLimit;
-    address fallbackRecipient;
     uint256 secondaryRequiredGasLimit;
-    address multiHopFallback;
     uint256 secondaryFee;
 }
 

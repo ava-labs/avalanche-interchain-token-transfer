@@ -20,6 +20,7 @@ import {TeleporterOwnerUpgradeable} from "@teleporter/upgrades/TeleporterOwnerUp
 import {IAllowList} from "@avalabs/subnet-evm-contracts@1.2.0/contracts/interfaces/IAllowList.sol";
 import {IWrappedNativeToken} from "./interfaces/IWrappedNativeToken.sol";
 import {
+    OriginSender,
     SendTokensInput,
     SendAndCallInput,
     BridgeMessageType,
@@ -225,6 +226,11 @@ contract NativeTokenDestination is
 
         // Returned the burned transaction fees denominated by destination bridge's token scale.
         BridgeMessage memory message = BridgeMessage({
+            originSender: OriginSender({
+                blockchainID: sourceBlockchainID,
+                bridgeAddress: address(this),
+                senderAddress: _msgSender()
+            }),
             messageType: BridgeMessageType.SINGLE_HOP_SEND,
             payload: abi.encode(
                 SingleHopSendMessage({recipient: SOURCE_CHAIN_BURN_ADDRESS, amount: burnedTxFees})
@@ -340,6 +346,7 @@ contract NativeTokenDestination is
      * sure to properly handle the balance to ensure it does not get locked improperly.
      */
     function _handleSendAndCall(
+        OriginSender memory originSender,
         SingleHopCallMessage memory message,
         uint256 amount
     ) internal virtual override {
@@ -348,13 +355,7 @@ contract NativeTokenDestination is
 
         // Encode the call to {INativeSendAndCallReceiver-receiveTokens}
         bytes memory payload = abi.encodeCall(
-            INativeSendAndCallReceiver.receiveTokens,
-            (
-                message.sourceBlockchainID,
-                message.originBridgeAddress,
-                message.originSenderAddress,
-                message.recipientPayload
-            )
+            INativeSendAndCallReceiver.receiveTokens, (originSender, message.recipientPayload)
         );
 
         // Call the destination contract with the given payload, gas amount, and value.
@@ -367,7 +368,7 @@ contract NativeTokenDestination is
             emit CallSucceeded(message.recipientContract, amount);
         } else {
             emit CallFailed(message.recipientContract, amount);
-            payable(message.fallbackRecipient).sendValue(amount);
+            _addRetryBalances(originSender, amount);
         }
     }
 

@@ -9,6 +9,7 @@ import {TeleporterTokenSource} from "./TeleporterTokenSource.sol";
 import {INativeTokenBridge} from "./interfaces/INativeTokenBridge.sol";
 import {INativeSendAndCallReceiver} from "./interfaces/INativeSendAndCallReceiver.sol";
 import {
+    OriginSender,
     SendTokensInput,
     SendAndCallInput,
     SingleHopCallMessage
@@ -66,7 +67,16 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
      * @dev See {INativeTokenBridge-send}
      */
     function send(SendTokensInput calldata input) external payable {
-        _send(input, msg.value, false);
+        _send(
+            input,
+            OriginSender({
+                blockchainID: blockchainID,
+                bridgeAddress: address(this),
+                senderAddress: msg.sender
+            }),
+            msg.value,
+            false
+        );
     }
 
     /**
@@ -74,9 +84,11 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
      */
     function sendAndCall(SendAndCallInput calldata input) external payable {
         _sendAndCall({
-            sourceBlockchainID: blockchainID,
-            originBridgeAddress: address(this),
-            originSenderAddress: _msgSender(),
+            originSender: OriginSender({
+                blockchainID: blockchainID,
+                bridgeAddress: address(this),
+                senderAddress: msg.sender
+            }),
             input: input,
             amount: msg.value,
             isMultiHop: false
@@ -106,10 +118,14 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
      * Withdraws the wrapped tokens for native tokens,
      * and sends them to the recipient.
      */
-    function _withdraw(address recipient, uint256 amount) internal virtual override {
+    function _withdraw(
+        address recipient,
+        uint256 amount
+    ) internal virtual override returns (bool) {
         emit TokensWithdrawn(recipient, amount);
         wrappedToken.withdraw(amount);
         payable(recipient).sendValue(amount);
+        return true;
     }
 
     /**
@@ -121,6 +137,7 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
      * sent to the fallback recipient.
      */
     function _handleSendAndCall(
+        OriginSender memory originSender,
         SingleHopCallMessage memory message,
         uint256 amount
     ) internal virtual override {
@@ -129,13 +146,7 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
 
         // Encode the call to {INativeSendAndCallReceiver-receiveTokens}
         bytes memory payload = abi.encodeCall(
-            INativeSendAndCallReceiver.receiveTokens,
-            (
-                message.sourceBlockchainID,
-                message.originBridgeAddress,
-                message.originSenderAddress,
-                message.recipientPayload
-            )
+            INativeSendAndCallReceiver.receiveTokens, (originSender, message.recipientPayload)
         );
 
         // Call the destination contract with the given payload, gas amount, and value.
@@ -148,7 +159,7 @@ contract NativeTokenSource is INativeTokenBridge, TeleporterTokenSource {
             emit CallSucceeded(message.recipientContract, amount);
         } else {
             emit CallFailed(message.recipientContract, amount);
-            payable(message.fallbackRecipient).sendValue(amount);
+            _addRetryBalances(originSender, amount);
         }
     }
 }
