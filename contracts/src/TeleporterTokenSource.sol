@@ -214,7 +214,7 @@ abstract contract TeleporterTokenSource is
             })
         );
 
-        emit TokensSent(messageID, msg.sender, input, adjustedAmount);
+        emit TokensSent(messageID, _msgSender(), input, adjustedAmount);
     }
 
     /**
@@ -421,7 +421,7 @@ abstract contract TeleporterTokenSource is
 
         // If there is excess amount, send it back to the sender.
         if (excessAmount > 0) {
-            _withdraw(msg.sender, excessAmount);
+            _withdraw(_msgSender(), excessAmount);
         }
     }
 

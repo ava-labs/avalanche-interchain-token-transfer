@@ -237,7 +237,7 @@ abstract contract TeleporterTokenDestination is
             })
         );
 
-        emit TokensSent(messageID, msg.sender, input, amount);
+        emit TokensSent(messageID, _msgSender(), input, amount);
     }
 
     /**
@@ -315,7 +315,7 @@ abstract contract TeleporterTokenDestination is
             })
         );
 
-        emit TokensSent(messageID, msg.sender, input, amount);
+        emit TokensSent(messageID, _msgSender(), input, amount);
     }
 
     /**
@@ -347,7 +347,7 @@ abstract contract TeleporterTokenDestination is
             payload: abi.encode(
                 SingleHopCallMessage({
                     sourceBlockchainID: blockchainID,
-                    originSenderAddress: msg.sender,
+                    originSenderAddress: _msgSender(),
                     recipientContract: input.recipient,
                     amount: amount,
                     recipientPayload: sendAndCallInput.recipientPayload,
@@ -372,7 +372,7 @@ abstract contract TeleporterTokenDestination is
             })
         );
 
-        emit TokensAndCallSent(messageID, msg.sender, sendAndCallInput, amount);
+        emit TokensAndCallSent(messageID, _msgSender(), sendAndCallInput, amount);
     }
 
     /**
@@ -405,7 +405,7 @@ abstract contract TeleporterTokenDestination is
             messageType: BridgeMessageType.MULTI_HOP_CALL,
             payload: abi.encode(
                 MultiHopCallMessage({
-                    originSenderAddress: msg.sender,
+                    originSenderAddress: _msgSender(),
                     destinationBlockchainID: input.destinationBlockchainID,
                     destinationBridgeAddress: input.destinationBridgeAddress,
                     recipientContract: input.recipient,
@@ -444,7 +444,7 @@ abstract contract TeleporterTokenDestination is
             })
         );
 
-        emit TokensAndCallSent(messageID, msg.sender, sendAndCallInput, amount);
+        emit TokensAndCallSent(messageID, _msgSender(), sendAndCallInput, amount);
     }
 
     /**
