@@ -5,8 +5,8 @@ import (
 
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/subnet-evm/accounts/abi/bind"
-	erc20source "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/ERC20Source"
-	nativetokensource "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/NativeTokenSource"
+	erc20source "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/TeleporterTokenSource/ERC20Source"
+	nativetokensource "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/TeleporterTokenSource/NativeTokenSource"
 	"github.com/ethereum/go-ethereum/common"
 
 	. "github.com/onsi/gomega"

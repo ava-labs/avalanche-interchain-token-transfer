@@ -5,8 +5,8 @@ import (
 	"math/big"
 
 	"github.com/ava-labs/subnet-evm/accounts/abi/bind"
-	erc20destination "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/ERC20Destination"
-	nativetokensource "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/NativeTokenSource"
+	erc20destination "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/TeleporterTokenDestination/ERC20Destination"
+	nativetokensource "github.com/ava-labs/teleporter-token-bridge/abi-bindings/go/TeleporterTokenSource/NativeTokenSource"
 	"github.com/ava-labs/teleporter-token-bridge/tests/utils"
 	"github.com/ava-labs/teleporter/tests/interfaces"
 	teleporterUtils "github.com/ava-labs/teleporter/tests/utils"
