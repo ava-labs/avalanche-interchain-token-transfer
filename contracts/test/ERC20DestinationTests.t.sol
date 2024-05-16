@@ -8,8 +8,9 @@ pragma solidity 0.8.18;
 import {ERC20BridgeTest} from "./ERC20BridgeTests.t.sol";
 import {TeleporterTokenDestinationTest} from "./TeleporterTokenDestinationTests.t.sol";
 import {IERC20SendAndCallReceiver} from "../src/interfaces/IERC20SendAndCallReceiver.sol";
-import {TeleporterTokenDestination} from "../src/TeleporterTokenDestination.sol";
-import {ERC20Destination} from "../src/ERC20Destination.sol";
+import {TeleporterTokenDestination} from
+    "../src/TeleporterTokenDestination/TeleporterTokenDestination.sol";
+import {ERC20Destination} from "../src/TeleporterTokenDestination/ERC20Destination.sol";
 import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
 import {ExampleERC20} from "../lib/teleporter/contracts/src/Mocks/ExampleERC20.sol";

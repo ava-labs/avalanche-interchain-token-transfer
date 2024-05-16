@@ -13,12 +13,12 @@ import {
 import {INativeMinter} from
     "@avalabs/subnet-evm-contracts@1.2.0/contracts/interfaces/INativeMinter.sol";
 import {INativeTokenDestination} from "./interfaces/INativeTokenDestination.sol";
-import {INativeSendAndCallReceiver} from "./interfaces/INativeSendAndCallReceiver.sol";
+import {INativeSendAndCallReceiver} from "../interfaces/INativeSendAndCallReceiver.sol";
 import {TeleporterOwnerUpgradeable} from "@teleporter/upgrades/TeleporterOwnerUpgradeable.sol";
 // We need IAllowList as an indirect dependency in order to compile.
 // solhint-disable-next-line no-unused-import
 import {IAllowList} from "@avalabs/subnet-evm-contracts@1.2.0/contracts/interfaces/IAllowList.sol";
-import {IWrappedNativeToken} from "./interfaces/IWrappedNativeToken.sol";
+import {IWrappedNativeToken} from "../interfaces/IWrappedNativeToken.sol";
 import {
     SendTokensInput,
     SendAndCallInput,
@@ -26,11 +26,11 @@ import {
     BridgeMessage,
     SingleHopSendMessage,
     SingleHopCallMessage
-} from "./interfaces/ITeleporterTokenBridge.sol";
+} from "../interfaces/ITeleporterTokenBridge.sol";
 import {ERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/ERC20.sol";
-import {SendReentrancyGuard} from "./utils/SendReentrancyGuard.sol";
-import {CallUtils} from "./utils/CallUtils.sol";
-import {TokenScalingUtils} from "./utils/TokenScalingUtils.sol";
+import {SendReentrancyGuard} from "../utils/SendReentrancyGuard.sol";
+import {CallUtils} from "../utils/CallUtils.sol";
+import {TokenScalingUtils} from "../utils/TokenScalingUtils.sol";
 import {Address} from "@openzeppelin/contracts@4.8.1/utils/Address.sol";
 
 /**

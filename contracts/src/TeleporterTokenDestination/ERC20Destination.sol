@@ -6,16 +6,16 @@
 pragma solidity 0.8.18;
 
 import {TeleporterTokenDestination} from "./TeleporterTokenDestination.sol";
-import {IERC20Bridge} from "./interfaces/IERC20Bridge.sol";
-import {IERC20SendAndCallReceiver} from "./interfaces/IERC20SendAndCallReceiver.sol";
+import {IERC20Bridge} from "../interfaces/IERC20Bridge.sol";
+import {IERC20SendAndCallReceiver} from "../interfaces/IERC20SendAndCallReceiver.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
 import {
     SendTokensInput,
     SendAndCallInput,
     SingleHopCallMessage
-} from "./interfaces/ITeleporterTokenBridge.sol";
-import {CallUtils} from "./utils/CallUtils.sol";
+} from "../interfaces/ITeleporterTokenBridge.sol";
+import {CallUtils} from "../utils/CallUtils.sol";
 
 /**
  * THIS IS AN EXAMPLE CONTRACT THAT USES UN-AUDITED CODE.

@@ -7,7 +7,7 @@ pragma solidity 0.8.18;
 
 import {TeleporterTokenSourceTest} from "./TeleporterTokenSourceTests.t.sol";
 import {NativeTokenBridgeTest} from "./NativeTokenBridgeTests.t.sol";
-import {NativeTokenSource} from "../src/NativeTokenSource.sol";
+import {NativeTokenSource} from "../src/TeleporterTokenSource/NativeTokenSource.sol";
 import {IWrappedNativeToken} from "../src/interfaces/IWrappedNativeToken.sol";
 import {INativeSendAndCallReceiver} from "../src/interfaces/INativeSendAndCallReceiver.sol";
 import {ExampleWAVAX} from "../src/mocks/ExampleWAVAX.sol";

@@ -5,7 +5,7 @@
 
 pragma solidity 0.8.18;
 
-import {IERC20Bridge} from "./IERC20Bridge.sol";
+import {IERC20Bridge} from "../../interfaces/IERC20Bridge.sol";
 import {ITeleporterTokenSource} from "./ITeleporterTokenSource.sol";
 
 /**

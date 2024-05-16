@@ -6,8 +6,10 @@
 pragma solidity 0.8.18;
 
 import {
-    ITeleporterTokenBridge, SendTokensInput, SendAndCallInput
-} from "./ITeleporterTokenBridge.sol";
+    ITeleporterTokenBridge,
+    SendTokensInput,
+    SendAndCallInput
+} from "../../interfaces/ITeleporterTokenBridge.sol";
 
 /**
  * THIS IS AN EXAMPLE CONTRACT THAT USES UN-AUDITED CODE.

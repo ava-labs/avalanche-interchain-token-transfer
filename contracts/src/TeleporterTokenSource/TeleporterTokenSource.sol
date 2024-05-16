@@ -18,9 +18,9 @@ import {
     MultiHopSendMessage,
     MultiHopCallMessage,
     RegisterDestinationMessage
-} from "./interfaces/ITeleporterTokenBridge.sol";
-import {SendReentrancyGuard} from "./utils/SendReentrancyGuard.sol";
-import {TokenScalingUtils} from "./utils/TokenScalingUtils.sol";
+} from "../interfaces/ITeleporterTokenBridge.sol";
+import {SendReentrancyGuard} from "../utils/SendReentrancyGuard.sol";
+import {TokenScalingUtils} from "../utils/TokenScalingUtils.sol";
 import {IWarpMessenger} from
     "@avalabs/subnet-evm-contracts@1.2.0/contracts/interfaces/IWarpMessenger.sol";
 import {SafeERC20TransferFrom} from "@teleporter/SafeERC20TransferFrom.sol";

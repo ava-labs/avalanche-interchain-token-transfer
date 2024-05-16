@@ -5,7 +5,7 @@
 
 pragma solidity 0.8.18;
 
-import {ITeleporterTokenBridge} from "./ITeleporterTokenBridge.sol";
+import {ITeleporterTokenBridge} from "../../interfaces/ITeleporterTokenBridge.sol";
 import {TeleporterFeeInfo} from "@teleporter/ITeleporterMessenger.sol";
 
 /**

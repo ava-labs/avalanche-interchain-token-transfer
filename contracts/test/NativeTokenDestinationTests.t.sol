@@ -8,13 +8,14 @@ pragma solidity 0.8.18;
 import {TeleporterTokenDestinationTest} from "./TeleporterTokenDestinationTests.t.sol";
 import {NativeTokenBridgeTest} from "./NativeTokenBridgeTests.t.sol";
 import {INativeSendAndCallReceiver} from "../src/interfaces/INativeSendAndCallReceiver.sol";
-import {TeleporterTokenDestination} from "../src/TeleporterTokenDestination.sol";
+import {TeleporterTokenDestination} from
+    "../src/TeleporterTokenDestination/TeleporterTokenDestination.sol";
 import {
     NativeTokenDestinationSettings,
     NativeTokenDestination,
     TeleporterMessageInput,
     TeleporterFeeInfo
-} from "../src/NativeTokenDestination.sol";
+} from "../src/TeleporterTokenDestination/NativeTokenDestination.sol";
 import {INativeMinter} from
     "@avalabs/subnet-evm-contracts@1.2.0/contracts/interfaces/INativeMinter.sol";
 import {ITeleporterMessenger, TeleporterMessageInput} from "@teleporter/ITeleporterMessenger.sol";

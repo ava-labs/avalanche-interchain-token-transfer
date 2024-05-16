@@ -6,7 +6,10 @@
 pragma solidity 0.8.18;
 
 import {TeleporterTokenBridgeTest} from "./TeleporterTokenBridgeTests.t.sol";
-import {TeleporterTokenSource, IWarpMessenger} from "../src/TeleporterTokenSource.sol";
+import {
+    TeleporterTokenSource,
+    IWarpMessenger
+} from "../src/TeleporterTokenSource/TeleporterTokenSource.sol";
 import {TeleporterRegistry} from "@teleporter/upgrades/TeleporterRegistry.sol";
 import {
     SendTokensInput,

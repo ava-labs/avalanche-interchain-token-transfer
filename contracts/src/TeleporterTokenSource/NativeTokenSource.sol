@@ -6,16 +6,16 @@
 pragma solidity 0.8.18;
 
 import {TeleporterTokenSource} from "./TeleporterTokenSource.sol";
-import {INativeTokenBridge} from "./interfaces/INativeTokenBridge.sol";
-import {INativeSendAndCallReceiver} from "./interfaces/INativeSendAndCallReceiver.sol";
+import {INativeTokenBridge} from "../interfaces/INativeTokenBridge.sol";
+import {INativeSendAndCallReceiver} from "../interfaces/INativeSendAndCallReceiver.sol";
 import {
     SendTokensInput,
     SendAndCallInput,
     SingleHopCallMessage
-} from "./interfaces/ITeleporterTokenBridge.sol";
-import {IWrappedNativeToken} from "./interfaces/IWrappedNativeToken.sol";
-import {CallUtils} from "./utils/CallUtils.sol";
-import {SafeWrappedNativeTokenDeposit} from "./utils/SafeWrappedNativeTokenDeposit.sol";
+} from "../interfaces/ITeleporterTokenBridge.sol";
+import {IWrappedNativeToken} from "../interfaces/IWrappedNativeToken.sol";
+import {CallUtils} from "../utils/CallUtils.sol";
+import {SafeWrappedNativeTokenDeposit} from "../utils/SafeWrappedNativeTokenDeposit.sol";
 import {Address} from "@openzeppelin/contracts@4.8.1/utils/Address.sol";
 
 /**
