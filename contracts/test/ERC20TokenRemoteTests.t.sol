@@ -13,7 +13,7 @@ import {TokenRemoteSettings} from "../src/TokenRemote/interfaces/ITokenRemote.so
 import {ERC20TokenRemote} from "../src/TokenRemote/ERC20TokenRemote.sol";
 import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
-import {ExampleERC20} from "../lib/teleporter/contracts/src/Mocks/ExampleERC20.sol";
+import {ExampleERC20} from "../lib/teleporter/contracts/src/mocks/ExampleERC20.sol";
 import {SendTokensInput} from "../src/interfaces/ITokenTransferrer.sol";
 
 contract ERC20TokenRemoteTest is ERC20TokenTransferrerTest, TokenRemoteTest {

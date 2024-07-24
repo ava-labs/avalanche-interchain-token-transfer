@@ -7,7 +7,7 @@ pragma solidity 0.8.18;
 
 import {TokenTransferrerTest} from "./TokenTransferrerTests.t.sol";
 import {TokenHome, IWarpMessenger} from "../src/TokenHome/TokenHome.sol";
-import {TeleporterRegistry} from "@teleporter/upgrades/TeleporterRegistry.sol";
+import {TeleporterRegistry} from "@teleporter/registry/TeleporterRegistry.sol";
 import {
     SendTokensInput,
     SendAndCallInput,

@@ -6,7 +6,7 @@
 pragma solidity 0.8.18;
 
 import {TeleporterMessageInput, TeleporterFeeInfo} from "@teleporter/ITeleporterMessenger.sol";
-import {TeleporterOwnerUpgradeable} from "@teleporter/upgrades/TeleporterOwnerUpgradeable.sol";
+import {TeleporterOwnerUpgradeable} from "@teleporter/registry/TeleporterOwnerUpgradeable.sol";
 import {ITokenHome} from "./interfaces/ITokenHome.sol";
 import {
     SendTokensInput,

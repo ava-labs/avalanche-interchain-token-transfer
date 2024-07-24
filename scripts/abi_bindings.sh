@@ -3,6 +3,7 @@
 # See the file LICENSE for licensing terms.
 
 set -e
+set -o pipefail
 
 AVALANCHE_INTERCHAIN_TOKEN_TRANSFER_PATH=$(
   cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -11,9 +12,6 @@ AVALANCHE_INTERCHAIN_TOKEN_TRANSFER_PATH=$(
 
 source $AVALANCHE_INTERCHAIN_TOKEN_TRANSFER_PATH/scripts/constants.sh
 source $AVALANCHE_INTERCHAIN_TOKEN_TRANSFER_PATH/scripts/versions.sh
-source $TELEPORTER_PATH/scripts/utils.sh
-
-setARCH
 
 # Contract names to generate Go bindings for
 DEFAULT_CONTRACT_LIST="TokenHome TokenRemote ERC20TokenHome ERC20TokenRemote NativeTokenHome NativeTokenRemote WrappedNativeToken MockERC20SendAndCallReceiver MockNativeSendAndCallReceiver ExampleERC20Decimals"
@@ -74,7 +72,7 @@ do
     gen_path=$AVALANCHE_INTERCHAIN_TOKEN_TRANSFER_PATH/abi-bindings/go/$dir/$contract_name
     mkdir -p $gen_path
     $GOPATH/bin/abigen --abi $abi_file \
-                       --pkg $(convertToLower $contract_name) \
+                       --pkg $(echo $contract_name|tr '[:upper:]' '[:lower:]') \
                        --bin $AVALANCHE_INTERCHAIN_TOKEN_TRANSFER_PATH/contracts/out/$contract_name.sol/$contract_name.bin \
                        --type $contract_name \
                        --out $gen_path/$contract_name.go

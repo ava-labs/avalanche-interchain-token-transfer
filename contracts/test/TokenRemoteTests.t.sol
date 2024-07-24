@@ -8,7 +8,7 @@ pragma solidity 0.8.18;
 import {TeleporterMessageInput, TeleporterFeeInfo} from "@teleporter/ITeleporterMessenger.sol";
 import {TokenTransferrerTest} from "./TokenTransferrerTests.t.sol";
 import {TokenRemote, IWarpMessenger} from "../src/TokenRemote/TokenRemote.sol";
-import {TeleporterRegistry} from "@teleporter/upgrades/TeleporterRegistry.sol";
+import {TeleporterRegistry} from "@teleporter/registry/TeleporterRegistry.sol";
 import {SendTokensInput, SendAndCallInput} from "../src/interfaces/ITokenTransferrer.sol";
 import {ITeleporterMessenger} from "@teleporter/ITeleporterMessenger.sol";
 import {TokenScalingUtils} from "../src/utils/TokenScalingUtils.sol";
@@ -20,7 +20,7 @@ import {
     RegisterRemoteMessage
 } from "../src/interfaces/ITokenTransferrer.sol";
 import {IERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/IERC20.sol";
-import {ExampleERC20} from "../lib/teleporter/contracts/src/Mocks/ExampleERC20.sol";
+import {ExampleERC20} from "../lib/teleporter/contracts/src/mocks/ExampleERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts@4.8.1/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract TokenRemoteTest is TokenTransferrerTest {
