@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This repository has been merged into Interchain Messaging Contracts repository at [ICM Contracts](https://github.com/ava-labs/icm-contracts). This repository is archived and will not be updated.
+
 # Avalanche Interchain Token Transfer (ICTT)
 
 ## Overview
@@ -67,7 +70,7 @@ Compiler run successful!
 Analysing contracts...
 Running tests...
 | File                                             | % Lines           | % Statements      | % Branches      | % Funcs           |
-|--------------------------------------------------|-------------------|-------------------|-----------------|-------------------|
+| ------------------------------------------------ | ----------------- | ----------------- | --------------- | ----------------- |
 | src/TokenHome/ERC20TokenHome.sol                 | 100.00% (1/1)     | 100.00% (1/1)     | 100.00% (0/0)   | 100.00% (1/1)     |
 | src/TokenHome/ERC20TokenHomeUpgradeable.sol      | 100.00% (27/27)   | 100.00% (33/33)   | 100.00% (6/6)   | 100.00% (11/11)   |
 | src/TokenHome/NativeTokenHome.sol                | 100.00% (1/1)     | 100.00% (1/1)     | 100.00% (0/0)   | 100.00% (1/1)     |
